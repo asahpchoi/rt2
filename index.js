@@ -4,6 +4,8 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
+import { url } from 'inspector';
+ 
 
 // Load environment variables from .env file
 dotenv.config();
@@ -16,9 +18,10 @@ fastify.register(fastifyFormBody);
 fastify.register(fastifyWs);
 
 // Constants
-const SYSTEM_MESSAGE = 'You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.';
-const VOICE = 'alloy';
+const SYSTEM_MESSAGE = process.env.SYSTEM_MESSAGE || "You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.";
+const VOICE = process.env.VOICE || "alloy";
 const PORT = process.env.PORT || 3000; // Allow dynamic port assignment
+const WSS_URL = process.env.WSS_URL || 'wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview';
 
 // List of Event Types to log to the console. See OpenAI Realtime API Documentation. (session.updated is handled separately.)
 const LOG_EVENT_TYPES = [
@@ -54,7 +57,7 @@ fastify.register(async (fastify) => {
     fastify.get('/media-stream', { websocket: true }, (connection, req) => {
         console.log('Client connected');
 
-        const url = `wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview`
+        const url = WSS_URL;
         const openAiWs = new WebSocket(url, {
             headers: {
                 //Authorization: `Bearer ${OPENAI_API_KEY}`,
