@@ -8,14 +8,8 @@ import fastifyWs from '@fastify/websocket';
 // Load environment variables from .env file
 dotenv.config();
 
-// Retrieve the OpenAI API key from environment variables. You must have OpenAI Realtime API access.
-const { OPENAI_API_KEY } = process.env;
-
-if (!OPENAI_API_KEY) {
-    console.error('Missing OpenAI API key. Please set it in the .env file.');
-    process.exit(1);
-}
-
+ 
+ 
 // Initialize Fastify
 const fastify = Fastify();
 fastify.register(fastifyFormBody);
@@ -24,7 +18,7 @@ fastify.register(fastifyWs);
 // Constants
 const SYSTEM_MESSAGE = 'You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.';
 const VOICE = 'alloy';
-const PORT = process.env.PORT || 5050; // Allow dynamic port assignment
+const PORT = process.env.PORT || 3000; // Allow dynamic port assignment
 
 // List of Event Types to log to the console. See OpenAI Realtime API Documentation. (session.updated is handled separately.)
 const LOG_EVENT_TYPES = [
@@ -46,12 +40,9 @@ fastify.get('/', async (request, reply) => {
 // <Say> punctuation to improve text-to-speech translation
 fastify.all('/incoming-call', async (request, reply) => {
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
-                          <Response>
-                              <Say>Please wait while we connect your call to the A. I. voice assistant, powered by Twilio and the Open-A.I. Realtime API</Say>
-                              <Pause length="1"/>
-                              <Say>O.K. you can start talking!</Say>
+                          <Response> 
                               <Connect>
-                                  <Stream url="wss://${request.headers.host}/media-stream" />
+                                  <Stream url="ws://${request.headers.host}/media-stream" />
                               </Connect>
                           </Response>`;
 
@@ -63,11 +54,11 @@ fastify.register(async (fastify) => {
     fastify.get('/media-stream', { websocket: true }, (connection, req) => {
         console.log('Client connected');
 
-
-        const openAiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01', {
+        const url = `wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview`
+        const openAiWs = new WebSocket(url, {
             headers: {
-                Authorization: `Bearer ${OPENAI_API_KEY}`,
-                "OpenAI-Beta": "realtime=v1"
+                //Authorization: `Bearer ${OPENAI_API_KEY}`,
+                //"OpenAI-Beta": "realtime=v1"
             }
         });
 
@@ -98,7 +89,7 @@ fastify.register(async (fastify) => {
         });
 
         // Listen for messages from the OpenAI WebSocket (and send to Twilio if necessary)
-        openAiWs.on('message', (data) => {
+        openAiWs.on('message', async (data) => {
             try {
                 const response = JSON.parse(data);
 
@@ -118,6 +109,21 @@ fastify.register(async (fastify) => {
                     };
                     connection.send(JSON.stringify(audioDelta));
                 }
+                if (response.type === "input_audio_buffer.speech_started") {
+                    console.log("interrupt");
+                    const clear_twilio = {
+                        "streamSid": streamSid,
+                        "event": "clear"
+                    }
+                    await connection.send(JSON.stringify(clear_twilio))
+                   
+                    const interrupt_message = {
+                        "type": "response.cancel"
+                    }
+                    await openAiWs.send(JSON.stringify(interrupt_message))
+                }                      
+               
+ 
             } catch (error) {
                 console.error('Error processing OpenAI message:', error, 'Raw message:', data);
             }
@@ -138,9 +144,11 @@ fastify.register(async (fastify) => {
 
                             openAiWs.send(JSON.stringify(audioAppend));
                         }
+                       
                         break;
                     case 'start':
                         streamSid = data.start.streamSid;
+
                         console.log('Incoming stream has started', streamSid);
                         break;
                     default:
@@ -169,7 +177,7 @@ fastify.register(async (fastify) => {
     });
 });
 
-fastify.listen({ port: PORT }, (err) => {
+fastify.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
     if (err) {
         console.error(err);
         process.exit(1);
