@@ -5,13 +5,13 @@ import dotenv from 'dotenv';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
 import { url } from 'inspector';
- 
+import twilio from "twilio"
 
 // Load environment variables from .env file
 dotenv.config();
 
- 
- 
+
+
 // Initialize Fastify
 const fastify = Fastify();
 fastify.register(fastifyFormBody);
@@ -23,6 +23,11 @@ const VOICE = process.env.VOICE || "alloy";
 const PORT = process.env.PORT || 3000; // Allow dynamic port assignment
 const WSS_URL = process.env.WSS_URL || 'wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview';
 
+console.log({
+    SYSTEM_MESSAGE,
+    VOICE,
+    WSS_URL
+})
 // List of Event Types to log to the console. See OpenAI Realtime API Documentation. (session.updated is handled separately.)
 const LOG_EVENT_TYPES = [
     'response.content.done',
@@ -45,12 +50,39 @@ fastify.all('/incoming-call', async (request, reply) => {
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
                           <Response> 
                               <Connect>
-                                  <Stream url="ws://${request.headers.host}/media-stream" />
+                                  <Stream url="wss://${request.headers.host}/media-stream" />
                               </Connect>
                           </Response>`;
 
     reply.type('text/xml').send(twimlResponse);
 });
+
+fastify.all('/call', async (req, rep) => {
+    
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const client = twilio(accountSid, authToken);
+
+    if(req.query.phone) {
+
+        const call = await client.calls.create({
+            from: "+85230089511",
+            to: `+852${req.query.phone}`,
+            twiml: `<Response>
+                        <Connect>
+                            <Stream url="wss://${req.headers.host}/media-stream" />
+                        </Connect>
+                    </Response>`,
+        });
+        console.log(`Calling: ${req.query.phone} : ${call.sid}`)
+    }
+    else {
+        console.log(`no call`);
+    }
+
+    
+}
+);
 
 // WebSocket route for media-stream
 fastify.register(async (fastify) => {
@@ -119,14 +151,14 @@ fastify.register(async (fastify) => {
                         "event": "clear"
                     }
                     await connection.send(JSON.stringify(clear_twilio))
-                   
+
                     const interrupt_message = {
                         "type": "response.cancel"
                     }
                     await openAiWs.send(JSON.stringify(interrupt_message))
-                }                      
-               
- 
+                }
+
+
             } catch (error) {
                 console.error('Error processing OpenAI message:', error, 'Raw message:', data);
             }
@@ -147,7 +179,7 @@ fastify.register(async (fastify) => {
 
                             openAiWs.send(JSON.stringify(audioAppend));
                         }
-                       
+
                         break;
                     case 'start':
                         streamSid = data.start.streamSid;
