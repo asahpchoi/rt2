@@ -44,6 +44,9 @@ fastify.get('/', async (request, reply) => {
 // Route for Twilio to handle incoming and outgoing calls
 // <Say> punctuation to improve text-to-speech translation
 fastify.all('/incoming-call', async (request, reply) => {
+ 
+    SYSTEM_MESSAGE = process.env.SYSTEM_MESSAGE || "You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.";
+ 
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
                           <Response> 
                               <Connect>
