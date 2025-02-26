@@ -21,7 +21,7 @@ fastify.register(fastifyWs);
 let SYSTEM_MESSAGE = process.env.SYSTEM_MESSAGE || "You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.";
 const VOICE = process.env.VOICE || "alloy";
 const PORT = process.env.PORT || 3000; // Allow dynamic port assignment
-const WSS_URL = process.env.WSS_URL || 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17';//'wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview';
+const WSS_URL = process.env.WSS_URL || 'wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview';//'wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
  
