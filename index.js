@@ -6,6 +6,7 @@ import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
 import { url } from 'inspector';
 import twilio from "twilio"
+import { TrustProductsChannelEndpointAssignmentContextImpl } from 'twilio/lib/rest/trusthub/v1/trustProducts/trustProductsChannelEndpointAssignment';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -21,7 +22,8 @@ fastify.register(fastifyWs);
 let SYSTEM_MESSAGE = process.env.SYSTEM_MESSAGE || "You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.";
 const VOICE = process.env.VOICE || "alloy";
 const PORT = process.env.PORT || 3000; // Allow dynamic port assignment
-const WSS_URL = process.env.WSS_URL || 'wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview';//'wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview';
+const MODEL = process.env.MODEL || "gpt-4o-realtime-preview";
+const WSS_URL = process.env.WSS_URL || 'wss://api.openai.com/v1/realtime?model=' + MODEL;//'wss://ik-oai-eastus-2.openai.azure.com/openai/realtime?api-key=b3e819600fbe4981be34ef2aa79943e2&deployment=gpt-4o-realtime-preview&api-version=2024-10-01-preview';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
  
@@ -46,7 +48,7 @@ fastify.get('/', async (request, reply) => {
 fastify.all('/incoming-call', async (request, reply) => {
  
     SYSTEM_MESSAGE = process.env.SYSTEM_MESSAGE || "You are a helpful and bubbly AI assistant who loves to chat about anything the user is interested about and is prepared to offer them facts. You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. Always stay positive, but work in a joke when appropriate.";
- 
+    
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
                           <Response> 
                               <Connect>
