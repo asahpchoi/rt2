@@ -6,7 +6,7 @@ import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
 import { url } from 'inspector';
 import twilio from "twilio"
-import { TrustProductsChannelEndpointAssignmentContextImpl } from 'twilio/lib/rest/trusthub/v1/trustProducts/trustProductsChannelEndpointAssignment';
+//import { TrustProductsChannelEndpointAssignmentContextImpl } from 'twilio/lib/rest/trusthub/v1/trustProducts/trustProductsChannelEndpointAssignment';
 
 // Load environment variables from .env file
 dotenv.config();
